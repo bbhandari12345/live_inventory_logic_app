@@ -1,0 +1,1 @@
+from LiveInventoryFetcher.transformer.csv_text_json_transformer import transformer

@@ -25,7 +25,7 @@ class ObjectType(Enum):
 
 class Base(ABC):
     """
-    Base class to derive all other class extractor, fetcher and dispatcher from
+    Base class to derive all other classe extractor, fetcher and dispatcher from
     """
 
     @abstractmethod

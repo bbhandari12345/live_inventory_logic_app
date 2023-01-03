@@ -5,7 +5,7 @@ import pandas as pd
 import psycopg2
 import pytest
 
-from LiveInventorySchedular.utils.data_access_layer.sql_db.postgres.psqlresultset import PgSQlResultSet
+from LiveInventoryFetcher.utils.data_access_layer.sql_db.postgres.psqlresultset import PgSQlResultSet
 
 
 class TestPgSQlResultSet:

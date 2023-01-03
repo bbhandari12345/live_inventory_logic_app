@@ -1,7 +1,7 @@
-from LiveInventorySchedular.scheduler.schedulerbase import *
-from LiveInventorySchedular.config import Config
-from LiveInventorySchedular.utils.data_access_layer.sql_db import DBEngineFactory
-from LiveInventorySchedular.common_utils.db_queries import QUERY_FETCH_SYNC_CANDIDATE_FROM_VENDORS, \
+from LiveInventoryFetcher.scheduler.schedulerbase import *
+from LiveInventoryFetcher.config import Config
+from LiveInventoryFetcher.utils.data_access_layer.sql_db import DBEngineFactory
+from LiveInventoryFetcher.common_utils.db_queries import QUERY_FETCH_SYNC_CANDIDATE_FROM_VENDORS, \
     QUERY_FETCH_VENDORS_CONFIG,  QUERY_FETCH_AND_PRIORITY_FETCH_SYNC_CANDIDATE_FROM_VENDORS_VENDORS_CODE_PRODUCTS, \
     QUERY_FETCH_VENDORS_CONFIG_PRIORITY,QUERY_GENERATE_ACCESS_TOKEN_CMD, QUERY_FETCH_VENDORS_CONNECTION_TYPE, \
     QUERY_FETCH_FILTER_ALLOWED_CODES

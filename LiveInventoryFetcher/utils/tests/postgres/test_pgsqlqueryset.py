@@ -3,8 +3,8 @@ from unittest import mock
 
 import pytest
 
-from LiveInventorySchedular.utils.data_access_layer.sql_db.postgres.psqlqueryset import PgSQlQuerySet
-from LiveInventorySchedular.utils.data_access_layer.sql_db.postgres.psqlresultset import PgSQlResultSet
+from LiveInventoryFetcher.utils.data_access_layer.sql_db.postgres.psqlqueryset import PgSQlQuerySet
+from LiveInventoryFetcher.utils.data_access_layer.sql_db.postgres.psqlresultset import PgSQlResultSet
 
 
 class TestPgSQlQuerySet:

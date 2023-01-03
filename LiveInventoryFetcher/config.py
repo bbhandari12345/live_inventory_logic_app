@@ -18,6 +18,7 @@ class Config:
     DB_CONFIG = dict(config['dbconfig'])
     NETWORK_CONFIG = dict(config['network_filepath'])
     EXTRA = dict(config['extra'])
+    REQUEST_TIMEOUT = int(EXTRA.get('request_timeout'))
     LOGGER_CONFIG = {'nativelogger': {
         'filehandler': {
             'maxbytes': 10485760,

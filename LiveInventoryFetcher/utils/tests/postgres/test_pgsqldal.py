@@ -4,8 +4,8 @@ import pytest
 import os
 from psycopg2.extensions import connection, cursor
 
-from LiveInventorySchedular.utils.data_access_layer import PgSQLDAL
-from LiveInventorySchedular.utils.data_access_layer.sql_db.postgres.psqlqueryset import PgSQlQuerySet
+from LiveInventoryFetcher.utils.data_access_layer import PgSQLDAL
+from LiveInventoryFetcher.utils.data_access_layer.sql_db.postgres.psqlqueryset import PgSQlQuerySet
 
 
 class TestPgSQLDAL:
