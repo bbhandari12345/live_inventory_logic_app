@@ -66,11 +66,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 "extractor_write_path": EXTRACTOR_FILE_PATH
         }
     else:
-        fetcher_result = {
-            "result": False
-        }
+        fetcher_result = {}
 
-    if fetcher_result:
-        return func.HttpResponse(json.dumps(fetcher_result))
-    else:
-        return func.HttpResponse("problem while fetching", status_code=200)
+    if not fetcher_result:
+        return func.HttpResponse({}, status_code=200)
+
+    return func.HttpResponse(json.dumps(fetcher_result))

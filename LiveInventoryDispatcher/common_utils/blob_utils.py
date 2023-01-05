@@ -1,7 +1,7 @@
 """
 this module holds all function regarding blob storage
 """
-from LiveInventoryFetcher.config import Config
+from LiveInventoryExtractor.config import Config
 from azure.storage.blob import BlobServiceClient
 from typing import Union
 import logging as logger

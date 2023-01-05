@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
-from LiveInventoryFetcher.config import Config
-from LiveInventoryFetcher.common_utils.blob_utils import connect_blob
+from LiveInventoryExtractor.config import Config
+from LiveInventoryExtractor.common_utils.blob_utils import connect_blob
 import os
 import uuid
 import json
