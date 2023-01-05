@@ -10,8 +10,11 @@ import os
 from LiveInventoryFetcher.config import Config
 from flatten_dict import flatten, unflatten
 
-DATA_FILE_PATH = Config.BLOB_URL + "/" + Config.BLOB_CONTAINER_NAME + Config.BLOB_NAME + \
-                 Config.NETWORK_CONFIG.get('data_file_path')
+if Config.IS_BLOB:
+    DATA_FILE_PATH = Config.BLOB_URL + "/" + Config.BLOB_CONTAINER_NAME + Config.BLOB_NAME + \
+                     Config.NETWORK_CONFIG.get('data_file_path')
+else:
+    DATA_FILE_PATH = "./" + Config.NETWORK_CONFIG.get('data_file_path')
 
 
 class RESTCSVFetcherArgsException(Exception):
