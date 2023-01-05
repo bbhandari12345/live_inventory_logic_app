@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
+from LiveInventoryFetcher.config import Config
+from LiveInventoryFetcher.common_utils.blob_utils import connect_blob
 import os
 import uuid
 import json
@@ -25,12 +27,13 @@ class ObjectType(Enum):
 
 class Base(ABC):
     """
-    Base class to derive all other classe extractor, fetcher and dispatcher from
+    Base class to derive all other class extractor, fetcher and dispatcher from
     """
 
     @abstractmethod
     def __init__(self, **kwargs) -> None:
         super().__init__()
+        self.config_template = None
         self.object_type = None  # Member variable to store current object type
         self.kwargs = kwargs
         self.data = None  # Member variable to store payload
@@ -48,13 +51,8 @@ class Base(ABC):
 
     def read_config(self) -> Any:
         try:
-            # For Azure
             with requests.get(self.kwargs.get('config_file_path')) as config_file:
                 self.config_template = json.loads(config_file.text)
-
-            # For dev
-            # with open(self.kwargs.get('config_file_path'), 'r') as config_file: # For local
-            #     self.config_template = json.load(config_file)
 
         except Exception as ex:
             raise UC_ConfigReadException(ex)
@@ -75,18 +73,37 @@ class Base(ABC):
         if data_file_dir is None:
             raise UC_DataException("Data file path is None")
 
-        if not os.path.exists(data_file_dir):
-            raise UC_DataException("Data file path does not exist or is inaccessible")
+        if Config.IS_BLOB:
+            blob_service_client = connect_blob()
+            if not blob_service_client:
+                raise Exception(
+                    "Data file path does not exist or is inaccessible"
+                )
+        else:
+            if not os.path.exists(data_file_dir):
+                raise UC_DataException("Data file path does not exist or is inaccessible")
 
-        if not os.path.isdir(data_file_dir):
-            raise UC_DataException("Data file path is not a directory")
+            if not os.path.isdir(data_file_dir):
+                raise UC_DataException("Data file path is not a directory")
 
         # Write the vendor data to file
         try:
             file_name = uuid.uuid1()
-            data_file_path = os.path.join(data_file_dir, str(file_name) + ".json")
-            with open(data_file_path, 'w') as outfile:
-                outfile.write(self.data)
+            if Config.IS_BLOB:
+                data_file_path = os.path.join(
+                    str(file_name) + ".json"
+                )
+
+                container = Config.BLOB_CONTAINER_NAME + Config.BLOB_NAME + data_file_dir
+                blob_client = blob_service_client.get_blob_client(
+                    container=container,
+                    blob=data_file_path
+                )
+                blob_client.upload_blob(json.dumps(self.data))
+            else:
+                data_file_path = os.path.join(data_file_dir, str(file_name) + ".json")
+                with open(data_file_path, 'w') as outfile:
+                    outfile.write(self.data)
 
             # Save the write path
             self.meta[self.object_type.value.lower() + "_data_file_path"] = data_file_path

@@ -6,6 +6,7 @@ from LiveInventoryFetcher.utils.data_access_layer.sql_db import DBEngineFactory
 import string
 import json
 import requests
+from LiveInventoryFetcher.common_utils.blob_utils import upload_file_blob
 from flatten_dict import flatten, unflatten
 from LiveInventoryFetcher.orm.li_vendor_codes import LIVendorCodes
 from typing import List
@@ -45,7 +46,6 @@ def safeget(dct, keys):
 
 
 class RESTJSONFetcher(FetcherBase):
-    
     ITEM_CODE_STR = f'<<TPL_ITEM_CODE>>'
 
     def __init__(self, **kwargs) -> None:
@@ -76,7 +76,8 @@ class RESTJSONFetcher(FetcherBase):
 
         if self.config_template.get("mapping") and self.config_template.get("mapping").get("vendor_code_table"):
             error_mapping_list = self.config_template.get("mapping").get("vendor_code_table")
-            self.error_field_mapping = {fld_map.get('destination_field'): fld_map.get('source_field') for fld_map in error_mapping_list}
+            self.error_field_mapping = {fld_map.get('destination_field'): fld_map.get('source_field') for fld_map in
+                                        error_mapping_list}
 
         invalid_vendor_codes = []
         # Load other values
@@ -99,11 +100,12 @@ class RESTJSONFetcher(FetcherBase):
                     self.logger.info(
                         f"Removing invalid vendor code '{vendor_code}' and formulating request")
                     invalid_vendor_codes.append(vendor_code)
-                elif self.config_template.get("vendor_code_validation") is True and (vendor_code.count("-") > 1 or len(vendor_code) > 12):
+                elif self.config_template.get("vendor_code_validation") is True and (
+                        vendor_code.count("-") > 1 or len(vendor_code) > 12):
                     invalid_vendor_codes.append(vendor_code)
 
-            with open(FETCHER_FILE_PATH + f'{vendor_id}_invalid_vendor_codes.json', 'w') as f:
-                json.dump(invalid_vendor_codes, f)
+            # uploading invalid vendor info into blob
+            upload_file_blob("invalid_vendor_codes", invalid_vendor_codes)
 
             self.item_codes = list(
                 set(self.item_codes) - set(invalid_vendor_codes))
@@ -122,7 +124,6 @@ class RESTJSONFetcher(FetcherBase):
         self.request_config = self.__create_config(
             self.config_template, self.item_codes, template_values)
         return self
-
 
     def make_api_call(self, req_method, req_url, body, req_header, req_url_params):
         """
@@ -145,9 +146,8 @@ class RESTJSONFetcher(FetcherBase):
             self.logger.error("API response body was: ")
             self.logger.error(response.text)
             self.summary["FailedBatches"] += 1
-            #response = None # This will be checked by the caller
+            # response = None # This will be checked by the caller
         return response
-
 
     def fetch_vendor_data(self) -> Base:
         """
@@ -183,7 +183,7 @@ class RESTJSONFetcher(FetcherBase):
             items_response_path = self.config_template.get(
                 'items_response', None)
 
-     
+
 
         except Exception as ex:
             self.logger.error(
@@ -193,28 +193,29 @@ class RESTJSONFetcher(FetcherBase):
         tmp_flat_data = []
         try:
             # This block is to handle cases with pagination. eg: Nuvia
-            if self.request_config.get('pagination_control', None) and req_body=='{}':
+            if self.request_config.get('pagination_control', None) and req_body == '{}':
                 # We need multiple calls with pagination control, there's nothing to be sent in body
                 fetch_next_page = True
                 page_num = 1
                 total_pages = None
                 self.response_bodies = []
-                while(fetch_next_page): # We'll loop till we go through all pages
+                while (fetch_next_page):  # We'll loop till we go through all pages
 
                     # Here we are handling sub-case where the page number has to be sent in url parameter
                     if flat_request_config.get('pagination_control.request.param_location') == 'url':
                         req_url_params[flat_request_config.get('pagination_control.request.page_number')] = page_num
                     tmp_response = self.make_api_call(req_method, req_url,
-                                                        req_body, req_header, req_url_params)
-                    
+                                                      req_body, req_header, req_url_params)
+
                     self.response_bodies += json.loads(tmp_response.text)
 
                     # Here we are trying to get a read on how many pages in total are there
                     # This could be done just once, but no harm reading it in each iteration
                     if flat_request_config.get('pagination_control.response.param_location') == 'header':
-                        total_pages = tmp_response.headers.get(flat_request_config.get('pagination_control.response.total_pages'))
+                        total_pages = tmp_response.headers.get(
+                            flat_request_config.get('pagination_control.response.total_pages'))
                         total_pages = int(total_pages)
-                    if total_pages and page_num>=total_pages:
+                    if total_pages and page_num >= total_pages:
                         fetch_next_page = False
                     else:
                         page_num += 1
@@ -226,7 +227,7 @@ class RESTJSONFetcher(FetcherBase):
                 self.response_bodies = []
                 for item in self.item_codes:
                     tmp_response = self.make_api_call(req_method, req_url.replace(self.ITEM_CODE_STR, item),
-                                                        req_body, req_header, req_url_params)
+                                                      req_body, req_header, req_url_params)
                     if tmp_response.status_code == 404:
                         self.logger.warn("Item not found. The API returned 404")
                     else:
@@ -237,7 +238,7 @@ class RESTJSONFetcher(FetcherBase):
                 for item in self.body_number:
                     body = json.dumps(item.get('data'))
                     resp = self.make_api_call(req_method, req_url, body, req_header, req_url_params)
-                    
+
                     if resp.status_code in range(200, 210):
                         tmp_response_txt = json.loads(resp.text)
                         if isinstance(tmp_response_txt, dict) and items_response_path is not None:
@@ -254,7 +255,9 @@ class RESTJSONFetcher(FetcherBase):
                             for items in tmp_response_txt:
                                 self.response_bodies.append(items)
                     else:
-                        self.logger.error("Could not get data from vendor API. API returned HTTP Status code: {}".format(resp.status_code), exc_info=True)
+                        self.logger.error(
+                            "Could not get data from vendor API. API returned HTTP Status code: {}".format(
+                                resp.status_code), exc_info=True)
             else:
                 self.logger.info("Making API Request")
                 self.response = requests.request(method=req_method,
@@ -314,7 +317,7 @@ class RESTJSONFetcher(FetcherBase):
 
             if self.error_field_mapping:
                 self.vendor_codes_error_status = self.process_error_field_db(tmp_flat_data)
-            
+
             ## Update last fetch date of vendor_codes if it is not already updated while setting error codes
             if not self.error_field_mapping:
                 update_last_fetch_date = LIVendorCodes()
@@ -350,8 +353,6 @@ class RESTJSONFetcher(FetcherBase):
             is_url_get = config_template.get(
                 'api_request_template').get('url').get('method')
 
-            
-            
             # TODO: KLUDGE
             # Here we are trying to identify case where
             # item code is part of the url and we have 
@@ -380,7 +381,7 @@ class RESTJSONFetcher(FetcherBase):
                 "vendor_code_validation", None)
 
             item_list = []
-           
+
             for item in item_codes:
                 tmp_item_obj_str = item_obj_str.replace(
                     self.ITEM_CODE_STR, item)
@@ -392,11 +393,11 @@ class RESTJSONFetcher(FetcherBase):
                             f"{len(item)} {validation_condition}")
                         if check_condition and idx == 0:
                             tmp_item_obj_str = tmp_item_obj_str.split(",")[
-                                0] + "}"
+                                                   0] + "}"
                             break
                         elif check_condition and idx == 1:
                             tmp_item_obj_str = "{" + \
-                                tmp_item_obj_str.split(",")[1]
+                                               tmp_item_obj_str.split(",")[1]
                     item_list.append(json.loads(tmp_item_obj_str))
                 else:
                     item_list.append(json.loads(tmp_item_obj_str))
@@ -455,24 +456,30 @@ class RESTJSONFetcher(FetcherBase):
                 for fld in self.error_field_mapping.keys():
                     if fld == 'multi_vendor_code':
                         fld = 'vendor_code'
-                        if item.get('DistributorItemIdentifier') in self.vendor_codes and type(int(item.get('DistributorItemIdentifier'))) == int:
+                        if item.get('DistributorItemIdentifier') in self.vendor_codes and type(
+                                int(item.get('DistributorItemIdentifier'))) == int:
                             tmp_dict[fld] = item.get(
                                 'DistributorItemIdentifier')
-                        elif item.get('ManufacturerItemIdentifier') in self.vendor_codes and type(item.get('ManufacturerItemIdentifier')) == str:
+                        elif item.get('ManufacturerItemIdentifier') in self.vendor_codes and type(
+                                item.get('ManufacturerItemIdentifier')) == str:
                             tmp_dict[fld] = item.get(
                                 'ManufacturerItemIdentifier')
                         continue
-                    
+
                     if status_mapping:
                         if flatten_item.get(fld) in status_mapping:
                             tmp_dict.update({"error": False, self.error_field_mapping[fld]: flatten_item.get(fld)})
                         else:
                             tmp_dict.update({"error": True, self.error_field_mapping[fld]: flatten_item.get(fld)})
                     else:
-                        if flatten_item.get(fld) and (flatten_item.get(fld) != False or flatten_item.get(fld) != "FAILED"):
-                            tmp_dict[self.error_field_mapping[fld]] = True if self.error_field_mapping[fld] == "error" else flatten_item.get(fld)
+                        if flatten_item.get(fld) and (
+                                flatten_item.get(fld) != False or flatten_item.get(fld) != "FAILED"):
+                            tmp_dict[self.error_field_mapping[fld]] = True if self.error_field_mapping[
+                                                                                  fld] == "error" else flatten_item.get(
+                                fld)
                         else:
-                            tmp_dict[self.error_field_mapping[fld]] = False if self.error_field_mapping[fld] == "error" else "No Error"
+                            tmp_dict[self.error_field_mapping[fld]] = False if self.error_field_mapping[
+                                                                                   fld] == "error" else "No Error"
 
                     # if multi / looping required with addition req e.g. adding quantity
                     if_fld_has_multi = fld.find('[i]')
@@ -485,10 +492,10 @@ class RESTJSONFetcher(FetcherBase):
                             tmp_safegate_sum = sum(
                                 [int(x[tmp_fld_nesting[1]]) for x in tmp_safeget])
                             tmp_dict[self.error_field_mapping[fld]
-                                     ] = tmp_safegate_sum
+                            ] = tmp_safegate_sum
                         elif tmp_safeget != 0 and isinstance(tmp_safeget, dict):
                             tmp_dict[self.error_field_mapping[fld]
-                                     ] = tmp_safeget[tmp_fld_nesting[-1]]
+                            ] = tmp_safeget[tmp_fld_nesting[-1]]
                         else:
                             tmp_dict[self.error_field_mapping[fld]] = 0
                         continue
@@ -525,13 +532,14 @@ class RESTJSONFetcher(FetcherBase):
             if transformed_data:
                 # Filter out only those object which has vendor_code
                 transformed_data = list(filter(lambda p: (
-                    p.get('vendor_code') is not None and p.get('vendor_code') in self.kwargs.get('item_codes')), transformed_data))
+                        p.get('vendor_code') is not None and p.get('vendor_code') in self.kwargs.get('item_codes')),
+                                               transformed_data))
 
                 # Very Important part which filters duplicate vendor_code from the list and prevents unique constraint violation
                 new_data = []
                 _ = [new_data.append(x) for x in transformed_data if x.get('vendor_code') not in [
                     y.get('vendor_code') for y in new_data]]
-                transformed_data = new_data                    
+                transformed_data = new_data
 
                 # FOR FUTURE REFERENCE:- Use below code if upsert query is used instead of update
                 # for items in transformed_data:
@@ -547,17 +555,20 @@ class RESTJSONFetcher(FetcherBase):
                 #     for obj in vendor_obj["data"]:
                 #         if item.get("vendor_code") in obj.get("vendor_code"):
                 #             item.update({"internal_id": obj.get("internal_id")})
-                
+
                 _result = {}
                 for item in transformed_data:
                     _result.update({item.get("vendor_code"): [item["error"], item["error_description"]]})
-                
 
-                final_obj = {'vendor_id':[], "vendor_code": [], "error": [], "error_description": [], "internal_id": []}
+                final_obj = {'vendor_id': [], "vendor_code": [], "error": [], "error_description": [],
+                             "internal_id": []}
                 for item in vendor_obj["data"]:
                     if _result.get(item.get('vendor_code')) is not None and item.get('vendor_code'):
-                        item["error"] =  _result.get(item['vendor_code'])[0] if _result.get(item['vendor_code']) and _result.get(item['vendor_code'])[0] is not None else True
-                        item["error_description"] = _result.get(item['vendor_code'])[1] if _result.get(item['vendor_code']) and _result.get(item['vendor_code'])[1] else 'Invalid Item Code'
+                        item["error"] = _result.get(item['vendor_code'])[0] if _result.get(item['vendor_code']) and \
+                                                                               _result.get(item['vendor_code'])[
+                                                                                   0] is not None else True
+                        item["error_description"] = _result.get(item['vendor_code'])[1] if _result.get(
+                            item['vendor_code']) and _result.get(item['vendor_code'])[1] else 'Invalid Item Code'
 
                         final_obj['vendor_id'].append(item['vendor_id'])
                         final_obj["vendor_code"].append(item["vendor_code"])
@@ -565,18 +576,18 @@ class RESTJSONFetcher(FetcherBase):
                         final_obj["error_description"].append(item["error_description"])
                         final_obj["internal_id"].append(item["internal_id"])
 
-
                 try:
                     update_vendor_codes.load(partial=True)
-                    update_vendor_codes.bulk_update(final_obj, 'vendor_id,vendor_code,internal_id', vendor_id=vendor_id, vendor_codes=final_obj['vendor_code'])
-                    
+                    update_vendor_codes.bulk_update(final_obj, 'vendor_id,vendor_code,internal_id', vendor_id=vendor_id,
+                                                    vendor_codes=final_obj['vendor_code'])
+
                     # FOR FUTURE REFERENCE:- Use below code if upsert query is used instead of update
                     # update_vendor_codes.upsert(
                     #     transformed_data, conflict_fields="vendor_id, vendor_code")
 
                 except Exception as err:
                     self.logger.exception(err, exc_info=True)
-                    
+
                 # FOR FUTURE REFERENCE:- Use below code if upsert query is used instead of update
                 # try:
                 #     update_vendor_codes.bulk_update_fetch_date_vendor_codes(

@@ -3,7 +3,7 @@ this module reads all config value from config.ini file
 """
 # importing necessary library
 import configparser
-from LiveInventorySchedular.constants import CONFIG_FILE_PATH
+from LiveInventoryDispatcher.constants import CONFIG_FILE_PATH
 
 # handler for config parser
 config = configparser.ConfigParser()

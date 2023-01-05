@@ -4,6 +4,7 @@ from LiveInventoryFetcher.base.base import Base, UC_ConfigReadException
 from LiveInventoryFetcher.common_utils.db_queries import QUERY_CHECK_IF_VENDOR_CODE_EXISTS_IN_VENDOR_CODES_TABLE
 from LiveInventoryFetcher.fetcher.fetcherbase import FetcherBase
 from LiveInventoryFetcher.config import Config
+from LiveInventoryFetcher.common_utils.blob_utils import upload_file_blob
 import xmltodict
 import xml.etree.ElementTree as ET
 import re
@@ -104,8 +105,8 @@ class RESTXMLFetcher(FetcherBase):
                         if not check_expression:
                             invalid_vendor_codes.append(vendor_code)
 
-            with open(FETCHER_FILE_PATH + f'{vendor_id}_invalid_vendor_codes.json', 'w') as f:
-                json.dump(invalid_vendor_codes, f)
+            # uploading invalid vendor info into blob
+            upload_file_blob("invalid_vendor_codes", invalid_vendor_codes)
 
             item_codes = list(set(self.item_codes) - set(invalid_vendor_codes))
             self.summary['RequestItemCodeCount'] = len(item_codes)

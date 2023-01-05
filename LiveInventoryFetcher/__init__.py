@@ -56,16 +56,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logger.error(f"FAILURE - Failed fetching data for: {x.get('vendor_id')},"
                      f" vendor_code(s): {x.get('item_codes')} and generate fetcher file", exc_info=True)
 
+    logger.info(rest_fetcher)
     fetcher_result = {
-        "extractor_input": {
             "vendor_id": x.get('vendor_id'),
             "config_file_path": x.get('config_file_path'),
             "fetcher_file_path": rest_fetcher.meta['fetcher_data_file_path'],
             "item_codes": x.get('item_codes'),
             "vendor_codes_error_status": rest_fetcher.vendor_codes_error_status,
             "extractor_write_path": EXTRACTOR_FILE_PATH
-        },
-        "schedular_result": x
     }
 
     if fetcher_result:

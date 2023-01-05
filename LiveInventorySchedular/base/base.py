@@ -31,6 +31,7 @@ class Base(ABC):
     @abstractmethod
     def __init__(self, **kwargs) -> None:
         super().__init__()
+        self.config_template = None
         self.object_type = None  # Member variable to store current object type
         self.kwargs = kwargs
         self.data = None  # Member variable to store payload
@@ -48,13 +49,8 @@ class Base(ABC):
 
     def read_config(self) -> Any:
         try:
-            # For Azure
             with requests.get(self.kwargs.get('config_file_path')) as config_file:
                 self.config_template = json.loads(config_file.text)
-
-            # For dev
-            # with open(self.kwargs.get('config_file_path'), 'r') as config_file: # For local
-            #     self.config_template = json.load(config_file)
 
         except Exception as ex:
             raise UC_ConfigReadException(ex)
