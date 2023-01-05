@@ -10,7 +10,8 @@ import os
 from LiveInventoryFetcher.config import Config
 from flatten_dict import flatten, unflatten
 
-DATA_FILE_PATH = Config.NETWORK_CONFIG.get('data_file_path')
+DATA_FILE_PATH = Config.BLOB_URL + "/" + Config.BLOB_CONTAINER_NAME + Config.BLOB_NAME + \
+                 Config.NETWORK_CONFIG.get('data_file_path')
 
 
 class RESTCSVFetcherArgsException(Exception):
@@ -32,6 +33,7 @@ class FTPFileNotFoundException(Exception):
 class FTPFetcher(FetcherBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.request_config = None
         self.response_info = {
             "vendor_id": self.kwargs.get('vendor_id'),
             "response_text": None,
@@ -112,7 +114,7 @@ class FTPFetcher(FetcherBase):
                         ftp.connect(url)
                     ftp.login(username, password)
                     if zipFile:
-                        localfile = open(DATA_FILE_PATH + zipFile, 'wb')
+                        localfile = open(DATA_FILE_PATH + "/" + zipFile, 'wb')
                     else:
                         localfile = open(self.data_file_path, 'wb')
 

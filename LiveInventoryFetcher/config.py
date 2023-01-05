@@ -20,8 +20,6 @@ class Config:
     NETWORK_CONFIG = dict(config['network_filepath'])
     data_file_path = NETWORK_CONFIG.get('data_file_path')
 
-
-
     BLOB_URL = "https://savapi.blob.core.windows.net/stage?sp=r&st=2023-01-04T10:57:22Z&se=2023-01-04T18:57:22Z&spr" \
                "=https&sv=2021-06-08&sr=c&sig=eXydEpyYoS%2BgoMt037X4tkyd4lPJoKvmntJchLeEDtQ%3D"
     BLOB_CONTAINER_NAME = "stage/"
@@ -56,4 +54,3 @@ class Config:
         'format': "%(levelname)s [%(asctime)s] %(filename)s %(funcName)s : %(message)s"
     }
     }
-

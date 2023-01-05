@@ -99,7 +99,7 @@ class Base(ABC):
                     container=container,
                     blob=data_file_path
                 )
-                blob_client.upload_blob(json.dumps(self.data))
+                blob_client.upload_blob(self.data)
             else:
                 data_file_path = os.path.join(data_file_dir, str(file_name) + ".json")
                 with open(data_file_path, 'w') as outfile:

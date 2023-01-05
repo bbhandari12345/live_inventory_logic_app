@@ -45,7 +45,7 @@ def upload_file_blob(file_name, data) -> bool:
             container=container,
             blob=data_file_path
         )
-        blob_client.upload_blob(json.dumps(data))
+        blob_client.upload_blob(data)
         return True
     except Exception as exe:
         logger.error(exe)
