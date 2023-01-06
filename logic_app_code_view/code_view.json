@@ -1,0 +1,276 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Compose": {
+                "inputs": "@body('LiveInventorySchedular')",
+                "runAfter": {
+                    "LiveInventorySchedular": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Compose"
+            },
+            "Compose_2": {
+                "inputs": "@variables('fetcher_output')",
+                "runAfter": {
+                    "For_each": [
+                        "Succeeded",
+                        "Failed"
+                    ]
+                },
+                "type": "Compose"
+            },
+            "Compose_5": {
+                "inputs": "@chunk(outputs('Compose_2'), variables('extractor_data_chunk_size') )",
+                "runAfter": {
+                    "Initialize_variable_4": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Compose"
+            },
+            "Compose_7": {
+                "inputs": "@variables('extractor_output')",
+                "runAfter": {
+                    "For_each_2": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Compose"
+            },
+            "For_each": {
+                "actions": {
+                    "Append_to_array_variable": {
+                        "inputs": {
+                            "name": "fetcher_output",
+                            "value": "@outputs('Compose_3')"
+                        },
+                        "runAfter": {
+                            "Compose_3": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "AppendToArrayVariable"
+                    },
+                    "Append_to_array_variable_3": {
+                        "inputs": {
+                            "name": "fetcher_output",
+                            "value": "@outputs('Compose_4')"
+                        },
+                        "runAfter": {
+                            "Compose_4": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "AppendToArrayVariable"
+                    },
+                    "Compose_3": {
+                        "inputs": "@body('LiveInventoryFetcher')",
+                        "runAfter": {
+                            "LiveInventoryFetcher": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Compose"
+                    },
+                    "Compose_4": {
+                        "inputs": "@bool(0)",
+                        "runAfter": {
+                            "LiveInventoryFetcher": [
+                                "Failed"
+                            ]
+                        },
+                        "type": "Compose"
+                    },
+                    "LiveInventoryFetcher": {
+                        "inputs": {
+                            "body": "@items('For_each')",
+                            "function": {
+                                "id": "/subscriptions/1ce78759-24c6-47f3-b11e-f1ea12273337/resourceGroups/VendorAPIResourceGroup/providers/Microsoft.Web/sites/fn-orderprocessing-dev/functions/LiveInventoryFetcher"
+                            },
+                            "method": "POST"
+                        },
+                        "runAfter": {},
+                        "type": "Function"
+                    }
+                },
+                "foreach": "@variables('schedular_result')",
+                "runAfter": {
+                    "Initialize_variable_3": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_2": {
+                "actions": {
+                    "Append_to_array_variable_2": {
+                        "inputs": {
+                            "name": "extractor_output",
+                            "value": "@outputs('Compose_6')"
+                        },
+                        "runAfter": {
+                            "Compose_6": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "AppendToArrayVariable"
+                    },
+                    "Compose_6": {
+                        "inputs": "@body('LiveInventoryExtractor')",
+                        "runAfter": {
+                            "LiveInventoryExtractor": [
+                                "Succeeded",
+                                "Failed"
+                            ]
+                        },
+                        "type": "Compose"
+                    },
+                    "LiveInventoryExtractor": {
+                        "inputs": {
+                            "body": "@items('For_each_2')",
+                            "function": {
+                                "id": "/subscriptions/1ce78759-24c6-47f3-b11e-f1ea12273337/resourceGroups/VendorAPIResourceGroup/providers/Microsoft.Web/sites/fn-orderprocessing-dev/functions/LiveInventoryExtractor"
+                            },
+                            "method": "POST"
+                        },
+                        "runAfter": {},
+                        "type": "Function"
+                    }
+                },
+                "foreach": "@outputs('Compose_5')",
+                "runAfter": {
+                    "Initialize_variable_6": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Initialize_variable": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "schedular_result",
+                            "type": "array",
+                            "value": "@json(outputs('Compose'))"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Compose": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_3": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "fetcher_output",
+                            "type": "array"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_4": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "extractor_output",
+                            "type": "array"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_5": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_5": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "extractor_data_chunk_size",
+                            "type": "integer",
+                            "value": 5
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Compose_2": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_6": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "number_of_chunk",
+                            "type": "integer",
+                            "value": "@length(outputs('Compose_5'))"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Compose_5": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "LiveInventoryDispatcher": {
+                "inputs": {
+                    "body": "@outputs('Compose_7')",
+                    "function": {
+                        "id": "/subscriptions/1ce78759-24c6-47f3-b11e-f1ea12273337/resourceGroups/VendorAPIResourceGroup/providers/Microsoft.Web/sites/fn-orderprocessing-dev/functions/LiveInventoryDispatcher"
+                    },
+                    "method": "POST"
+                },
+                "runAfter": {
+                    "Compose_7": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Function"
+            },
+            "LiveInventorySchedular": {
+                "inputs": {
+                    "function": {
+                        "id": "/subscriptions/1ce78759-24c6-47f3-b11e-f1ea12273337/resourceGroups/VendorAPIResourceGroup/providers/Microsoft.Web/sites/fn-orderprocessing-dev/functions/LiveInventorySchedular"
+                    }
+                },
+                "runAfter": {},
+                "type": "Function"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "Recurrence": {
+                "evaluatedRecurrence": {
+                    "frequency": "Week",
+                    "interval": 1
+                },
+                "recurrence": {
+                    "frequency": "Week",
+                    "interval": 1
+                },
+                "type": "Recurrence"
+            }
+        }
+    },
+    "parameters": {}
+}
